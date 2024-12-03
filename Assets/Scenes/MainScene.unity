@@ -472,8 +472,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9012488dfed9ff64da125829e5d4e478, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Width: 10
-  Height: 10
+  Width: 20
+  Height: 20
 --- !u!33 &2081922183
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -506,7 +506,6 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 561f971ea43a2b44cbda1efd6a858e7f, type: 2}
-  - {fileID: 2100000, guid: e81cf12f0ed2cdd4ab374cd959ef8fcc, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
