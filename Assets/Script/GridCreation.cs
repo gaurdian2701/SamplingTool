@@ -9,31 +9,46 @@ using Random = System.Random;
 [RequireComponent(typeof(MeshFilter))]
 public class GridCreation : MonoBehaviour
 {
-    public int Width;
-    public int Height;
+    [Range(1, 100)] public int Resolution;
+    
+    private int _width;
+    private  int _height;
 
     private MeshRenderer _meshRenderer;
     private MeshFilter _meshFilter;
     
     private Tile[,] _tileData;
     private List<Color> _colorData;
+    List<Vector3> vertices = new List<Vector3>();
+    List<int> triangles = new List<int>();
+    List<Vector3> normals = new List<Vector3>();
 
     private void Awake()
     {
-        _tileData = new Tile[Width, Height];
+        _width = Resolution;
+        _height = Resolution;
+        
+        _tileData = new Tile[_width, _height];
+        _colorData = new List<Color>();
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
+        normals = new List<Vector3>();
+        
         _meshRenderer = GetComponent<MeshRenderer>();
         _meshFilter = GetComponent<MeshFilter>();
+        
         GenerateTileData();
         GenerateMeshData();
         UpdateMeshColorData();
+        
         StartCoroutine(DoGameOfLife());
     }
 
     private void GenerateTileData()
     {
-        for (int i = 0; i < Height; i++)
+        for (int i = 0; i < _height; i++)
         {
-            for (int j = 0; j < Width; j++)
+            for (int j = 0; j < _width; j++)
             {
                 Tile currentTile = new Tile();
                 currentTile.X = (UInt16)i;
@@ -46,14 +61,9 @@ public class GridCreation : MonoBehaviour
 
     private void GenerateMeshData()
     {
-        List<Vector3> vertices = new List<Vector3>();
-        List<int> triangles = new List<int>();
-        List<Vector3> normals = new List<Vector3>();
-        _colorData = new List<Color>();
-
-        for (int i = 0; i < Height; i++)
+        for (int i = 0; i < _height; i++)
         {
-            for (int j = 0; j < Width; j++)
+            for (int j = 0; j < _width; j++)
             {
                 int numberOfVertices = vertices.Count;
                 Tile currentTile = _tileData[i, j];
@@ -85,9 +95,9 @@ public class GridCreation : MonoBehaviour
     private void UpdateMeshColorData()
     {
         _colorData.Clear();
-        for (int i = 0; i < Height; i++)
+        for (int i = 0; i < _height; i++)
         {
-            for (int j = 0; j < Width; j++)
+            for (int j = 0; j < _width; j++)
             {
                 Color colorToBeAdded = _tileData[i, j].isAlive ? Color.black : Color.white;
                 _colorData.AddRange(new Color[]
@@ -103,9 +113,9 @@ public class GridCreation : MonoBehaviour
     {
         while (true)
         {
-            for (int i = 0; i < Height; i++)
+            for (int i = 0; i < _height; i++)
             {
-                for (int j = 0; j < Width; j++)
+                for (int j = 0; j < _width; j++)
                 {
                     Tile currentTile = _tileData[i, j];
                     int neighboursOfTile = CheckNeighbours(currentTile);
@@ -126,7 +136,8 @@ public class GridCreation : MonoBehaviour
                 }
             }
             UpdateMeshColorData();
-            yield return new WaitForSecondsRealtime(0.1f);
+            yield return null;
+            // yield return new WaitForSecondsRealtime(0.1f);
         }
     }
 
@@ -137,7 +148,7 @@ public class GridCreation : MonoBehaviour
         {
             for (int j = -1; j <= 1; j++)
             {
-                if((i == 0 && j == 0) || tile.X + i >= Height - 1 || tile.Y + j >= Width - 1 || tile.X + i <= 0 || tile.Y + j <= 0)
+                if((i == 0 && j == 0) || tile.X + i >= _height - 1 || tile.Y + j >= _width - 1 || tile.X + i <= 0 || tile.Y + j <= 0)
                     continue;
                 if(_tileData[tile.X + i, tile.Y + j].isAlive)
                     aliveNeighbors++;
