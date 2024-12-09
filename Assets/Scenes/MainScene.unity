@@ -472,7 +472,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9012488dfed9ff64da125829e5d4e478, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Resolution: 100
+  Resolution: 150
+  PerlinNoiseScale: 10
 --- !u!33 &2081922183
 MeshFilter:
   m_ObjectHideFlags: 0

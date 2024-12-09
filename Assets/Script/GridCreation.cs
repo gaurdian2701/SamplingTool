@@ -9,12 +9,11 @@ using Random = System.Random;
 [RequireComponent(typeof(MeshFilter))]
 public class GridCreation : MonoBehaviour
 {
-    [Range(1, 100)] public int Resolution;
+    [Range(1, 150)] public int Resolution;
+    [Range(1, 20)]public float PerlinNoiseScale;
     
     private int _width;
     private  int _height;
-    
-    private float perlinNoiseScale = 15f;
     
     private MeshFilter _meshFilter;
     private Tile[,] _tileData;
@@ -68,7 +67,7 @@ public class GridCreation : MonoBehaviour
             {
                 int numberOfVertices = vertices.Count;
                 Tile currentTile = _tileData[i, j];
-                float perlinSample = Mathf.PerlinNoise((float)i/Resolution * perlinNoiseScale, (float)j/Resolution * perlinNoiseScale);
+                float perlinSample = Mathf.PerlinNoise((float)i/Resolution * PerlinNoiseScale, (float)j/Resolution * PerlinNoiseScale);
                 vertices.AddRange(new Vector3[]
                 {
                     new Vector3(currentTile.X, perlinSample, currentTile.Y),
@@ -151,7 +150,7 @@ public class GridCreation : MonoBehaviour
             {
                 for (int j = 0; j < _width; j++)
                 {
-                    float perlinSample = Mathf.PerlinNoise((float)i/Resolution * perlinNoiseScale, (float)j/Resolution * perlinNoiseScale);
+                    float perlinSample = Mathf.PerlinNoise((float)i/Resolution * PerlinNoiseScale, (float)j/Resolution * PerlinNoiseScale);
                     Color updatedColor = new Color(perlinSample, perlinSample, perlinSample);
                     _colorData.AddRange(new Color[]
                     {
