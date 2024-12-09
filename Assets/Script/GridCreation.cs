@@ -13,11 +13,12 @@ public class GridCreation : MonoBehaviour
     
     private int _width;
     private  int _height;
-
-    private MeshRenderer _meshRenderer;
-    private MeshFilter _meshFilter;
     
+    private float perlinNoiseScale = 15f;
+    
+    private MeshFilter _meshFilter;
     private Tile[,] _tileData;
+    
     private List<Color> _colorData;
     List<Vector3> vertices = new List<Vector3>();
     List<int> triangles = new List<int>();
@@ -34,14 +35,14 @@ public class GridCreation : MonoBehaviour
         triangles = new List<int>();
         normals = new List<Vector3>();
         
-        _meshRenderer = GetComponent<MeshRenderer>();
         _meshFilter = GetComponent<MeshFilter>();
         
         GenerateTileData();
         GenerateMeshData();
-        UpdateMeshColorData();
+        // UpdateMeshColorData();
         
-        StartCoroutine(DoGameOfLife());
+        // StartCoroutine(DoGameOfLife());
+        // StartCoroutine(DoPerlinNoiseOnColour());
     }
 
     private void GenerateTileData()
@@ -51,8 +52,8 @@ public class GridCreation : MonoBehaviour
             for (int j = 0; j < _width; j++)
             {
                 Tile currentTile = new Tile();
-                currentTile.X = (UInt16)i;
-                currentTile.Y = (UInt16)j;
+                currentTile.X = i;
+                currentTile.Y = j;
                 currentTile.isAlive = UnityEngine.Random.Range(0, 2) > 0;
                 _tileData[i, j] = currentTile;
             }
@@ -67,12 +68,13 @@ public class GridCreation : MonoBehaviour
             {
                 int numberOfVertices = vertices.Count;
                 Tile currentTile = _tileData[i, j];
+                float perlinSample = Mathf.PerlinNoise((float)i/Resolution * perlinNoiseScale, (float)j/Resolution * perlinNoiseScale);
                 vertices.AddRange(new Vector3[]
                 {
-                    new Vector3(currentTile.X, currentTile.Y, 0),
-                    new Vector3(currentTile.X + 1, currentTile.Y, 0),
-                    new Vector3(currentTile.X, currentTile.Y + 1, 0),
-                    new Vector3(currentTile.X + 1, currentTile.Y + 1, 0)
+                    new Vector3(currentTile.X, perlinSample, currentTile.Y),
+                    new Vector3(currentTile.X + 1, perlinSample, currentTile.Y),
+                    new Vector3(currentTile.X, perlinSample, currentTile.Y + 1),
+                    new Vector3(currentTile.X + 1, perlinSample, currentTile.Y + 1)
                 });
                 triangles.AddRange(new int[]
                 {
@@ -136,8 +138,29 @@ public class GridCreation : MonoBehaviour
                 }
             }
             UpdateMeshColorData();
+            yield return new WaitForSecondsRealtime(0.1f);
+        }
+    }
+
+    private IEnumerator DoPerlinNoiseOnColour()
+    {
+        while (true)
+        {
+            _colorData.Clear();
+            for (int i = 0; i < _height; i++)
+            {
+                for (int j = 0; j < _width; j++)
+                {
+                    float perlinSample = Mathf.PerlinNoise((float)i/Resolution * perlinNoiseScale, (float)j/Resolution * perlinNoiseScale);
+                    Color updatedColor = new Color(perlinSample, perlinSample, perlinSample);
+                    _colorData.AddRange(new Color[]
+                    {
+                        updatedColor, updatedColor, updatedColor, updatedColor
+                    });
+                }
+            }
+            _meshFilter.mesh.colors = _colorData.ToArray();
             yield return null;
-            // yield return new WaitForSecondsRealtime(0.1f);
         }
     }
 
