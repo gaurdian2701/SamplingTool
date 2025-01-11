@@ -10,70 +10,75 @@ using Random = System.Random;
 public class GridCreator : MonoBehaviour
 {
     [Range(1, 100)] public int Resolution;
-    [Range(0, 15)] public float PerlinNoiseScale;
+    [Range(1, 10)] public float SamplingRadius;
+    [Range(1, 15)] public float PerlinNoiseScale;
     [Range(0, 1)] public float Lacunarity; //AFFECTS THE FREQUENCY OF AN OCTAVE
-    [Range(0, 5)] public float Persistence; //AFFECTS THE DECREASE IN AMPLITUDE OF AN OCTAVE
-    [Range(1, 50)] public float HeightModifier;
+    [Range(1, 5)] public float Persistence; //AFFECTS THE DECREASE IN AMPLITUDE OF AN OCTAVE
+    [Range(1, 5)] public float HeightModifier;
     [Range(1, 10)] public int Octaves;
-
-    public GameObject WaterPrefab;
     
     private MeshFilter _meshFilter;
     private Tile[,] _tileData;
-    private float[,] _rockData;
     
     private float _minNoiseValue = float.MaxValue;
     private float _maxNoiseValue = float.MinValue;
+    private float _distanceBetweenVertices;
     
     List<Vector3> vertices = new List<Vector3>();
     List<int> triangles = new List<int>();
     List<Vector3> normals = new List<Vector3>();
-
-    public void DoCreateGrid()
-    {
-        _tileData = new Tile[Resolution, Resolution];
-        _rockData = new float[Resolution, Resolution];
-        
-        vertices = new List<Vector3>();
-        triangles = new List<int>();
-        normals = new List<Vector3>();
-        
-        _meshFilter = GetComponent<MeshFilter>();
-        
-        GenerateTileData();
-        GenerateTerrainData();
-    }
+    
 
     private void Awake()
     {
-        _tileData = new Tile[Resolution, Resolution];
-        _rockData = new float[Resolution, Resolution];
-        
-        vertices = new List<Vector3>();
-        triangles = new List<int>();
-        normals = new List<Vector3>();
-        
-        _meshFilter = GetComponent<MeshFilter>();
+        InitializeTileData();
     }
 
     private void Start()
     {
         GenerateTileData();
         GenerateTerrainData();
-        GenerateRockData();
+    }
+    
+    private void OnValidate()
+    {
+        DoCreateGrid();
+    }
+    
+    public void DoCreateGrid()
+    {
+        InitializeTileData();
+        GenerateTileData();
+        GenerateTerrainData();
     }
 
+    private void InitializeTileData()
+    {
+        _tileData = new Tile[Resolution, Resolution];
+        
+        vertices = new List<Vector3>();
+        triangles = new List<int>();
+        normals = new List<Vector3>();
+        
+        _meshFilter = GetComponent<MeshFilter>();
+        _distanceBetweenVertices = SamplingRadius / Mathf.Sqrt(2);
+    }
     private void GenerateTileData()
     {
+        float xPos = 0f;
+        float zPos = 0f;
         for (int i = 0; i < Resolution; i++)
         {
             for (int j = 0; j < Resolution; j++)
             {
                 Tile currentTile = new Tile();
-                currentTile.X = i;
-                currentTile.Z = j;
+                currentTile.X = xPos;
+                currentTile.Z = zPos;
                 _tileData[i, j] = currentTile;
+                zPos += _distanceBetweenVertices;
             }
+            xPos += _distanceBetweenVertices;
+            zPos = 0f;
         }
     }
 
@@ -85,13 +90,12 @@ public class GridCreator : MonoBehaviour
             {
                 int numberOfVertices = vertices.Count;
                 Tile currentTile = _tileData[i, j];
-                _rockData[i,j] = GeneratePerlinData(i, j);
                 vertices.AddRange(new Vector3[]
                 {
-                    new Vector3(currentTile.X, _rockData[i, j], currentTile.Z), //bottom left 
-                    new Vector3(currentTile.X + 1, GeneratePerlinData(i+1, j), currentTile.Z), //bottom right
-                    new Vector3(currentTile.X, GeneratePerlinData(i, j+1), currentTile.Z + 1), //top left
-                    new Vector3(currentTile.X + 1, GeneratePerlinData(i+1, j+1), currentTile.Z + 1) //top right
+                    new Vector3(currentTile.X, GeneratePerlinData(i, j), currentTile.Z), //bottom left 
+                    new Vector3(currentTile.X + _distanceBetweenVertices, GeneratePerlinData(i+1, j), currentTile.Z), //bottom right
+                    new Vector3(currentTile.X, GeneratePerlinData(i, j+1), currentTile.Z + _distanceBetweenVertices), //top left
+                    new Vector3(currentTile.X + _distanceBetweenVertices, GeneratePerlinData(i+1, j+1), currentTile.Z + _distanceBetweenVertices) //top right
                 });
                 triangles.AddRange(new int[]
                 {
@@ -109,22 +113,6 @@ public class GridCreator : MonoBehaviour
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();
         _meshFilter.mesh = mesh;
-    }
-
-    private void GenerateRockData()
-    {
-        for (int i = 0; i < Resolution; i+=1)
-        {
-            for (int j = 0; j < Resolution; j+=1)
-            {
-                if (_rockData[i, j] - _minNoiseValue <= 2f)
-                {
-                    GameObject rock = Instantiate(WaterPrefab);
-                    rock.transform.position = new Vector3(i, _rockData[i, j], j);
-                    rock.transform.up = _meshFilter.mesh.normals[i * Resolution + j];
-                }
-            }
-        }
     }
     private float GeneratePerlinData(int x, int y)
     {

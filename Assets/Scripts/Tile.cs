@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Tile
 {
-    public int X;
-    public int Z;
+    public float X;
+    public float Z;
     public Vector3 OutwardNormal;
 }
