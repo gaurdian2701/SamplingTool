@@ -2,15 +2,15 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(GridCreator))]
+[CustomEditor(typeof(ProceduralGenerator))]
 public class GridCreatorEditor : Editor
 {
-    private GridCreator gridCreator;
+    private ProceduralGenerator _proceduralGenerator;
     public override void OnInspectorGUI()
     {
-        gridCreator = (GridCreator)target;
+        _proceduralGenerator = (ProceduralGenerator)target;
         DrawDefaultInspector();
         if(GUILayout.Button("Generate Perlin Mesh"))
-            gridCreator.DoCreateGrid();
+            _proceduralGenerator.DoCreateGrid();
     }
 }

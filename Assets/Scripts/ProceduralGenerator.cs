@@ -7,10 +7,11 @@ using Random = System.Random;
 
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshFilter))]
-public class GridCreator : MonoBehaviour
+public class ProceduralGenerator : MonoBehaviour
 {
     [Range(1, 100)] public int Resolution;
     [Range(1, 10)] public float SamplingRadius;
+    [Range(5, 30)] public float SampleLimit;
     [Range(1, 15)] public float PerlinNoiseScale;
     [Range(0, 1)] public float Lacunarity; //AFFECTS THE FREQUENCY OF AN OCTAVE
     [Range(1, 5)] public float Persistence; //AFFECTS THE DECREASE IN AMPLITUDE OF AN OCTAVE
@@ -19,9 +20,8 @@ public class GridCreator : MonoBehaviour
     
     private MeshFilter _meshFilter;
     private Tile[,] _tileData;
+    private PerlinGenerator _perlinGenerator;
     
-    private float _minNoiseValue = float.MaxValue;
-    private float _maxNoiseValue = float.MinValue;
     private float _distanceBetweenVertices;
     
     List<Vector3> vertices = new List<Vector3>();
@@ -47,6 +47,7 @@ public class GridCreator : MonoBehaviour
     
     public void DoCreateGrid()
     {
+        _perlinGenerator = new PerlinGenerator(PerlinNoiseScale, Persistence, Lacunarity, HeightModifier, Octaves);
         InitializeTileData();
         GenerateTileData();
         GenerateTerrainData();
@@ -114,27 +115,7 @@ public class GridCreator : MonoBehaviour
         mesh.RecalculateNormals();
         _meshFilter.mesh = mesh;
     }
-    private float GeneratePerlinData(int x, int y)
-    {
-        float frequency = 1;
-        float amplitude = 1;
-        float noiseHeight = 0f;
 
-        for (int currentOctave = 0; currentOctave < Octaves; currentOctave++)
-        {
-            float sample_x = x/PerlinNoiseScale * frequency;
-            float sample_y = y/PerlinNoiseScale * frequency;
-            float perlinSample = Mathf.PerlinNoise(sample_x, sample_y) * 2 - 1;
-            noiseHeight += perlinSample * amplitude * HeightModifier;
-            
-            if(noiseHeight < _minNoiseValue)
-                _minNoiseValue = noiseHeight;
-            if(noiseHeight > _maxNoiseValue)
-                _maxNoiseValue = noiseHeight;
-            frequency *= Lacunarity;
-            amplitude *= Persistence;
-        }
-        
-        return noiseHeight;
-    }
+    private float GeneratePerlinData(int x, int y) => _perlinGenerator.GeneratePerlinData(x, y);
+
 }
