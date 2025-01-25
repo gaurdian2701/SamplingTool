@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 
-public class Tile
+public class MeshPoint
 {
     public float X;
     public float Z;
-    public Vector3 OutwardNormal;
+    public bool IsSampledPoint = false;
 }

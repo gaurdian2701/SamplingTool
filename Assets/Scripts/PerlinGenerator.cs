@@ -12,14 +12,13 @@ public class PerlinGenerator
     private float _minNoiseValue = float.MaxValue;
     private float _maxNoiseValue = float.MinValue;
 
-    public PerlinGenerator(float perlinNoiseScale, float persistence, float lacunarity, float heightModifier,
-        float octaves)
+    public PerlinGenerator(ProceduralGenerator proceduralGeneratorData)
     {
-        _perlinNoiseScale = perlinNoiseScale;
-        _persistence = persistence;
-        _lacunarity = lacunarity;
-        _heightModifier = heightModifier;
-        _octaves = octaves;
+        _perlinNoiseScale = proceduralGeneratorData.PerlinNoiseScale;
+        _persistence = proceduralGeneratorData.Persistence;
+        _lacunarity = proceduralGeneratorData.Lacunarity;
+        _heightModifier = proceduralGeneratorData.HeightModifier;
+        _octaves = proceduralGeneratorData.Octaves;
     }
     public float GeneratePerlinData(int x, int y)
     {
