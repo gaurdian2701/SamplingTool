@@ -49,7 +49,6 @@ public class PoissonDiskSampler
 
                 if (IsValidPoint(finalPoint))
                 {
-                    Debug.Log("found valid point: " + finalPoint);
                     GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cube.transform.position = new Vector3(finalPoint.x, 0, finalPoint.y);
                     cube.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
@@ -69,8 +68,6 @@ public class PoissonDiskSampler
     {
         int xindex = Mathf.FloorToInt(point.x / _cellSize);
         int yindex = Mathf.FloorToInt(point.y / _cellSize);
-        
-        Debug.Log("Point X: " + point.x + " Point Z: " + point.y + " X Index: " + xindex + " Y Index: " + yindex);
 
         if (xindex <= 0 || yindex <= 0 || xindex >= _proceduralGenerator.Resolution - 1||
             yindex >= _proceduralGenerator.Resolution - 1)
@@ -85,7 +82,6 @@ public class PoissonDiskSampler
                 MeshPoint neighbourPoint = _proceduralGenerator.MeshPointData[xindex+i, yindex+j]; 
                 if (neighbourPoint != null && !neighbourPoint.IsSampledPoint)
                 {
-                    Debug.Log("neighbour point: " + neighbourPoint.X + ", " + neighbourPoint.Z);
                     neighbourPoint.IsSampledPoint = true;
                     float neighbourDistance = Vector2.Distance(new Vector2(neighbourPoint.X, neighbourPoint.Z),
                         new Vector2(point.x, point.y));
