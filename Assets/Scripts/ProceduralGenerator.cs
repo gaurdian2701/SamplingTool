@@ -133,7 +133,6 @@ public class ProceduralGenerator : MonoBehaviour
 
     private float GeneratePerlinData(int x, int y)
     {
-        return 0f;
         return _perlinGenerator.GeneratePerlinData(x, y);
     }
 
