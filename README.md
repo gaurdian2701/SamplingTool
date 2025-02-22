@@ -1,2 +1,2 @@
-# Procedural Stuff
-A repo I created to experiment with grid based meshes
+# Sampling Tool
+A repo I created to experiment with sampling on meshes
