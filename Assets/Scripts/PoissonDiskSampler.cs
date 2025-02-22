@@ -18,10 +18,12 @@ public class PoissonDiskSampler : MonoBehaviour
     public void DoSampling()
     {
         //Get a random point on the mesh
-        GetRandomPointOnMesh();
+        Vector3 randomPointOnMesh = GetRandomPointOnMesh();
+        if (randomPointOnMesh == Vector3.negativeInfinity)
+            return;
     }
 
-    private void GetRandomPointOnMesh()
+    private Vector3 GetRandomPointOnMesh()
     {
         Vector3 colliderExtentsOffset = new Vector3(Random.Range(0, PoissonCollider.bounds.extents.x), 
             PoissonCollider.bounds.extents.y,
@@ -29,9 +31,9 @@ public class PoissonDiskSampler : MonoBehaviour
         Vector3 rayCastOriginPoint = transform.position + colliderExtentsOffset;
         rayCastOriginPoint.y *= Y_OFFSET_FOR_SAMPLING_RAYCAST;
         Physics.Raycast(rayCastOriginPoint, Vector3.down, out RaycastHit hit, Mathf.Infinity, LayerMask.GetMask(GROUND_LAYER));
-        Debug.Log(hit.point);
-        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.transform.position = hit.point;
-        cube.transform.localScale /= 10;
+        if (hit.collider != null)
+            return hit.point;
+        else
+            return Vector3.negativeInfinity;
     }
 }

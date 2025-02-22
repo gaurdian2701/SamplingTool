@@ -13,7 +13,7 @@ public class GridCreatorEditor : Editor
         if(GUILayout.Button("Generate Perlin Mesh"))
             _proceduralGenerator.DoCreateGrid();
         
-        UnityEditor.EditorApplication.delayCall+=()=>
+        EditorApplication.delayCall+=()=>
         {
             DestroyImmediate(_proceduralGenerator.TerrainMeshCollider);
             _proceduralGenerator.ResetMeshCollider();
