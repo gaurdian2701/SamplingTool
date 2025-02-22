@@ -9,9 +9,9 @@ using Random = System.Random;
 [RequireComponent(typeof(MeshFilter))]
 public class ProceduralGenerator : MonoBehaviour
 {
-    [Range(1, 100)] public int Resolution;
-    [Range(1, 10)] public int SamplingRadius;
-    [Range(5, 30)] public int SampleLimit;
+    public PoissonDiskSampler PoissonDiskSampler;
+    public MeshCollider TerrainMeshCollider;
+    [Range(1, 80)]public int Resolution;
     [Range(1, 15)] public float PerlinNoiseScale;
     [Range(0, 1)] public float Lacunarity; //AFFECTS THE FREQUENCY OF AN OCTAVE
     [Range(1, 5)] public float Persistence; //AFFECTS THE DECREASE IN AMPLITUDE OF AN OCTAVE
@@ -19,11 +19,9 @@ public class ProceduralGenerator : MonoBehaviour
     [Range(1, 10)] public int Octaves;
     
     public MeshPoint[,] MeshPointData;
-    public MeshPoint[,] PoissonData;
     
     private MeshFilter _meshFilter;
     private PerlinGenerator _perlinGenerator;
-    private PoissonDiskSampler _poissonDiskSampler;
     
     private float _cellSize;
     
@@ -40,7 +38,6 @@ public class ProceduralGenerator : MonoBehaviour
     private void Start()
     {
         GenerateMeshData();
-        List<Vector2> samples = _poissonDiskSampler.GetPoissonDistribution();
         GenerateTerrainData();
     }
     
@@ -53,7 +50,6 @@ public class ProceduralGenerator : MonoBehaviour
     {
         InitializeMeshData();
         _perlinGenerator = new PerlinGenerator(this);
-        _poissonDiskSampler = new PoissonDiskSampler(this, _cellSize);
         GenerateMeshData();
         GenerateTerrainData();
     }
@@ -61,18 +57,19 @@ public class ProceduralGenerator : MonoBehaviour
     private void InitializeMeshData()
     {
         MeshPointData = new MeshPoint[Resolution, Resolution];
-        PoissonData = new MeshPoint[Resolution, Resolution];
-        
-        for (int i = 0; i < Resolution; i++)
-        for (int j = 0; j < Resolution; j++)
-            PoissonData[i, j] = null;
         
         vertices = new List<Vector3>();
         triangles = new List<int>();
         normals = new List<Vector3>();
         
         _meshFilter = GetComponent<MeshFilter>();
-        _cellSize = SamplingRadius / Mathf.Sqrt(2);
+        _cellSize = PoissonDiskSampler.SamplingRadius / Mathf.Sqrt(2);
+    }
+
+    public void ResetMeshCollider()
+    {
+        TerrainMeshCollider = gameObject.AddComponent<MeshCollider>();
+        TerrainMeshCollider.convex = true;
     }
     private void GenerateMeshData()
     {
