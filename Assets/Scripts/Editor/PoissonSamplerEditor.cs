@@ -12,5 +12,7 @@ public class PoissonSamplerEditor : Editor
         DrawDefaultInspector();
         if(GUILayout.Button("Start Sampling"))
             _poissonDiskSampler.DoSampling();
+        if(GUILayout.Button("Clear Samples"))
+            _poissonDiskSampler.ClearSampledPoints();
     }
 }

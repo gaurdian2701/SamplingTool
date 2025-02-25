@@ -22,8 +22,8 @@ public class ProceduralGenerator : MonoBehaviour
     
     private MeshFilter _meshFilter;
     private PerlinGenerator _perlinGenerator;
-    
-    private float _cellSize;
+
+    private const float CELL_SIZE = 1f;
     
     List<Vector3> vertices = new List<Vector3>();
     List<int> triangles = new List<int>();
@@ -63,7 +63,6 @@ public class ProceduralGenerator : MonoBehaviour
         normals = new List<Vector3>();
         
         _meshFilter = GetComponent<MeshFilter>();
-        _cellSize = PoissonDiskSampler.SamplingRadius / Mathf.Sqrt(2);
     }
 
     public void ResetMeshCollider()
@@ -83,9 +82,9 @@ public class ProceduralGenerator : MonoBehaviour
                 currentMeshPoint.X = xPos;
                 currentMeshPoint.Z = zPos;
                 MeshPointData[i, j] = currentMeshPoint;
-                zPos += _cellSize;
+                zPos += CELL_SIZE;
             }
-            xPos += _cellSize;
+            xPos += CELL_SIZE;
             zPos = 0f;
         }
     }
@@ -114,9 +113,9 @@ public class ProceduralGenerator : MonoBehaviour
                 vertices.AddRange(new Vector3[]
                 {
                     new Vector3(currentMeshPoint.X, GeneratePerlinData(i, j), currentMeshPoint.Z), //bottom left 
-                    new Vector3(currentMeshPoint.X + _cellSize, GeneratePerlinData(i+1, j), currentMeshPoint.Z), //bottom right
-                    new Vector3(currentMeshPoint.X, GeneratePerlinData(i, j+1), currentMeshPoint.Z + _cellSize), //top left
-                    new Vector3(currentMeshPoint.X + _cellSize, GeneratePerlinData(i+1, j+1), currentMeshPoint.Z + _cellSize) //top right
+                    new Vector3(currentMeshPoint.X + CELL_SIZE, GeneratePerlinData(i+1, j), currentMeshPoint.Z), //bottom right
+                    new Vector3(currentMeshPoint.X, GeneratePerlinData(i, j+1), currentMeshPoint.Z + CELL_SIZE), //top left
+                    new Vector3(currentMeshPoint.X + CELL_SIZE, GeneratePerlinData(i+1, j+1), currentMeshPoint.Z + CELL_SIZE) //top right
                 });
                 triangles.AddRange(new int[]
                 {
