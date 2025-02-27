@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEditor;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 
 [RequireComponent(typeof(BoxCollider))]
@@ -9,6 +11,7 @@ public class PoissonDiskSampler : MonoBehaviour
 {
     public BoxCollider PoissonCollider;
     public List<GameObject> Samples;
+    public float SpawnSpeed;
 
     [Range(0.1f, 1f)] public float SamplingRadius;
     [Range(5, 30)] public int SampleLimit;
@@ -56,19 +59,22 @@ public class PoissonDiskSampler : MonoBehaviour
 
         while (currentIterationForBatch < BATCH_LIMIT)
         {
+            if(_activePoints.Count == 0)
+                yield break;
+            
             Vector3? sampledPoint = _activePoints[Random.Range(0, _activePoints.Count)];
-            Vector3? sampleNeighbourPointReturnedIfPointIsValid = null;
-            if (PointIsValid(sampledPoint.Value, ref sampleNeighbourPointReturnedIfPointIsValid))
+            Vector3 sampleNeighbourPointReturnedIfPointIsValid = Vector3.zero;
+            if (PointIsValid(sampledPoint, ref sampleNeighbourPointReturnedIfPointIsValid))
             {
                 currentIterationForBatch++;
-                _finalPoints.Add(sampleNeighbourPointReturnedIfPointIsValid.Value);
+                _finalPoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
                 _activePoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
-                InstantiateAtPoint(sampleNeighbourPointReturnedIfPointIsValid.Value);
+                InstantiateAtPoint(sampleNeighbourPointReturnedIfPointIsValid);
             }
             else
                 _activePoints.Remove(sampledPoint);
 
-            yield return new WaitForSecondsRealtime(0.3f);
+            yield return new WaitForSecondsRealtime(SpawnSpeed);
         }
     }
 
@@ -91,21 +97,20 @@ public class PoissonDiskSampler : MonoBehaviour
         return null;
     }
 
-    private bool PointIsValid(Vector3 point, ref Vector3? samplePointReturnedIfValidPoint)
+    private bool PointIsValid(Vector3? point, ref Vector3 samplePointReturnedIfValidPoint)
     {
         RaycastHit hitInfo = new RaycastHit();
         for (int i = 0; i < SampleLimit; i++)
         {
-            Vector3 neighbourPoint = GetRandomPointOnDisk(point);
+            Vector3 neighbourPoint = GetRandomPointOnDisk(point.Value);
             if (!TryRayCast(neighbourPoint, Vector3.zero, ref hitInfo)) continue;
-            if (PointIsAtAppropriateDistance(neighbourPoint))
+            if (PointIsAtAppropriateDistance(neighbourPoint) && PoissonCollider.bounds.Contains(neighbourPoint))
             {
                 neighbourPoint.y = hitInfo.point.y;
                 samplePointReturnedIfValidPoint = neighbourPoint;
                 return true;
             }
         }
-
         return false;
     }
 
@@ -123,25 +128,31 @@ public class PoissonDiskSampler : MonoBehaviour
     private bool PointIsAtAppropriateDistance(Vector3 neighbourPoint)
     {
         float minimalDistance = float.MaxValue;
-        float distanceBetweenPoints = Mathf.NegativeInfinity;
+        float distanceBetweenPoints;
         Vector3 minimalPoint = Vector3.zero;
-        for (int i = 0; i < _activePoints.Count; i++)
+        Debug.Log(_activePoints.Count);
+        for (int i = 0; i < Samples.Count; i++)
         {
-            distanceBetweenPoints = Vector3.Distance(_activePoints[i].Value, neighbourPoint);
+            distanceBetweenPoints = Vector3.Distance(_finalPoints[i], neighbourPoint);
             if (distanceBetweenPoints < minimalDistance)
             {
-                minimalPoint = _activePoints[i].Value;
+                minimalPoint = _finalPoints[i];
                 minimalDistance = distanceBetweenPoints;
             }
         }
 
-        Debug.Log("NEIGHBOUR POINT: " + neighbourPoint + 
-                  "\nMINIMAL POINT: " + minimalPoint +
-                  "\nDISTANCE BETWEEN POINTS: " + 
-                  minimalDistance + 
-                  "\nSAMPLING RADIUS: " + SamplingRadius);
+        // Debug.Log("NEIGHBOUR POINT: " + neighbourPoint + 
+        //           "\nMINIMAL POINT: " + minimalPoint +
+        //           "\nDISTANCE BETWEEN POINTS: " + 
+        //           minimalDistance + 
+        //           "\nSAMPLING RADIUS: " + SamplingRadius);
         if (minimalDistance >= SamplingRadius)
+        {
+            Debug.DrawRay(neighbourPoint, Vector3.up, Color.red);
+            Debug.DrawRay(minimalPoint, Vector3.up, Color.blue);
+            Debug.DrawRay(neighbourPoint, (minimalPoint-neighbourPoint).normalized * Vector3.Distance(minimalPoint, neighbourPoint), Color.green);
             return true;
+        }
         return false;
     }
 
