@@ -68,7 +68,6 @@ public class ProceduralGenerator : MonoBehaviour
     public void ResetMeshCollider()
     {
         TerrainMeshCollider = gameObject.AddComponent<MeshCollider>();
-        TerrainMeshCollider.convex = true;
     }
     private void GenerateMeshData()
     {

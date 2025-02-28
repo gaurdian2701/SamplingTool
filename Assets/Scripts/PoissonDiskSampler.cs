@@ -156,17 +156,6 @@ public class PoissonDiskSampler : MonoBehaviour
         return false;
     }
 
-    private void FillSampledPoints()
-    {
-        for (int i = 0; i < _finalPoints.Count; i++)
-        {
-            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = _finalPoints[i];
-            cube.transform.localScale /= 10f;
-            Samples.Add(cube);
-        }
-    }
-
     public void ClearSampledPoints()
     {
         for (short i = 0; i < Samples.Count; i++)
