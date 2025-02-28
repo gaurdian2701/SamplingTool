@@ -14,5 +14,7 @@ public class PoissonSamplerEditor : Editor
             _poissonDiskSampler.DoSampling();
         if(GUILayout.Button("Clear Samples"))
             _poissonDiskSampler.ClearSampledPoints();
+        if(GUILayout.Button("Stop Sampling"))
+            _poissonDiskSampler.StopSampling();
     }
 }
