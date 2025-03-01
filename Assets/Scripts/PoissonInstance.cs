@@ -10,21 +10,28 @@ public class PoissonInstance
     private const int BATCH_LIMIT = 100;
 
     private PoissonDiskSampler _poissonDiskSampler;
-    private Vector3 _samplingInstanceAreaPosition; //The position of the imaginary sampling area
-    private Vector3 _samplingInstanceAreaBounds; //The extents of the imaginary sampling area
+    private Vector3 _samplingInstanceAreaCenter; //The position of the imaginary sampling area
+    private Vector3 _samplingInstanceAreaExtents; //The extents of the imaginary sampling area
 
     private Vector2 _xBounds;
     private Vector2 _zBounds;
 
-    public PoissonInstance(PoissonDiskSampler poissonDiskSampler, Vector3 samplingInstanceAreaPosition, Vector3 samplingInstanceAreaBounds)
+    private List<Vector3?> _activePoints;
+    private List<Vector3> _finalPoints;
+
+    public PoissonInstance(PoissonDiskSampler poissonDiskSampler, Vector3 samplingInstanceAreaCenter, Vector3 samplingInstanceAreaExtents)
     {
         _poissonDiskSampler = poissonDiskSampler;
-        _samplingInstanceAreaPosition = samplingInstanceAreaPosition;
-        _samplingInstanceAreaBounds = samplingInstanceAreaBounds;
-        _xBounds = new Vector2(_samplingInstanceAreaPosition.x + _samplingInstanceAreaBounds.x,
-            _samplingInstanceAreaPosition.x - _samplingInstanceAreaBounds.x);
-        _zBounds = new Vector2(_samplingInstanceAreaPosition.z + _samplingInstanceAreaBounds.z, 
-            _samplingInstanceAreaPosition.z - _samplingInstanceAreaBounds.z);
+        _samplingInstanceAreaCenter = samplingInstanceAreaCenter;
+        _samplingInstanceAreaExtents = samplingInstanceAreaExtents;
+        // Debug.DrawRay(_samplingInstanceAreaCenter, Vector3.up, Color.green, 10f);
+        // Debug.DrawRay(_samplingInstanceAreaCenter + samplingInstanceAreaExtents, Vector3.up, Color.yellow, 10f);
+        _xBounds = new Vector2(_samplingInstanceAreaCenter.x + _samplingInstanceAreaExtents.x,
+            _samplingInstanceAreaCenter.x - _samplingInstanceAreaExtents.x);
+        _zBounds = new Vector2(_samplingInstanceAreaCenter.z + _samplingInstanceAreaExtents.z, 
+            _samplingInstanceAreaCenter.z - _samplingInstanceAreaExtents.z);
+        _activePoints = new List<Vector3?>();
+        _finalPoints = new List<Vector3>();
     }
 
     public async void Async_DoSampling()
@@ -33,18 +40,16 @@ public class PoissonInstance
         Vector3? randomPointOnMesh = GetRandomPointOnMesh();
         if (randomPointOnMesh == null)
         {
-            Debug.LogWarning(
-                "Could not find random point on mesh. Please move the collider to an appropriate position.");
+            Debug.LogWarning("Could not find random point on mesh. Please move the collider to an appropriate position.");
             return;
         }
 
-        _poissonDiskSampler._activePoints.Add(randomPointOnMesh);
-        _poissonDiskSampler._finalPoints.Add(randomPointOnMesh.Value);
+        _activePoints.Add(randomPointOnMesh);
+        _finalPoints.Add(randomPointOnMesh.Value);
 
-        while (_poissonDiskSampler._activePoints.Count > 0)
+        while (_activePoints.Count > 0)
         {
             await DoSamplingBatch();
-            await Task.Delay(50);
         }
     }
 
@@ -54,20 +59,21 @@ public class PoissonInstance
 
         while (currentIterationForBatch < BATCH_LIMIT)
         {
-            if (_poissonDiskSampler._activePoints.Count == 0 || _poissonDiskSampler.MainSampleCancellationToken.IsCancellationRequested)
+            Debug.Log(currentIterationForBatch);
+            if (_activePoints.Count == 0 || _poissonDiskSampler.MainSampleCancellationToken.IsCancellationRequested)
                 return;
 
-            Vector3? sampledPoint = _poissonDiskSampler._activePoints[Random.Range(0, _poissonDiskSampler._activePoints.Count)];
+            Vector3? sampledPoint = _activePoints[Random.Range(0, _activePoints.Count)];
             Vector3 sampleNeighbourPointReturnedIfPointIsValid = Vector3.zero;
             if (PointIsValid(sampledPoint, ref sampleNeighbourPointReturnedIfPointIsValid))
             {
                 currentIterationForBatch++;
-                _poissonDiskSampler._finalPoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
-                _poissonDiskSampler._activePoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
+                _finalPoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
+                _activePoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
                 InstantiateAtPoint(sampleNeighbourPointReturnedIfPointIsValid);
             }
             else
-                _poissonDiskSampler._activePoints.Remove(sampledPoint);
+                _activePoints.Remove(sampledPoint);
 
             await Task.Delay((int)(_poissonDiskSampler.SpawnSpeed * 1000));
         }
@@ -84,11 +90,11 @@ public class PoissonInstance
     private Vector3? GetRandomPointOnMesh()
     {
         Vector3 colliderExtentsOffset = new Vector3(
-            Random.Range(0, _samplingInstanceAreaBounds.x),
-            _samplingInstanceAreaBounds.y,
-            Random.Range(0, _samplingInstanceAreaBounds.z));
+            Random.Range(0, _samplingInstanceAreaExtents.x),
+            _samplingInstanceAreaExtents.y,
+            Random.Range(0, _samplingInstanceAreaExtents.z));
         RaycastHit hitInfo = new RaycastHit();
-        if (TryRayCast(_samplingInstanceAreaPosition, colliderExtentsOffset, ref hitInfo))
+        if (TryRayCast(_samplingInstanceAreaCenter, colliderExtentsOffset, ref hitInfo))
             return hitInfo.point;
         return null;
     }
@@ -110,13 +116,6 @@ public class PoissonInstance
         return false;
     }
 
-    private bool PointIsWithinSamplingBounds(Vector3 point)
-    {
-        if (point.x > _xBounds.x || point.x < _xBounds.y || point.z > _zBounds.x || point.z < _zBounds.y)
-            return false;
-        return true;
-    }
-
     private Vector3 GetRandomPointOnDisk(Vector3 point)
     {
         //Getting a random point on the disk surrounding the sampled point
@@ -133,12 +132,12 @@ public class PoissonInstance
         float minimalDistance = float.MaxValue;
         float distanceBetweenPoints;
         Vector3 minimalPoint = Vector3.zero;
-        for (int i = 0; i < _poissonDiskSampler._finalPoints.Count; i++)
+        for (int i = 0; i < _finalPoints.Count; i++)
         {
-            distanceBetweenPoints = Vector3.Distance(_poissonDiskSampler._finalPoints[i], neighbourPoint);
+            distanceBetweenPoints = Vector3.Distance(_finalPoints[i], neighbourPoint);
             if (distanceBetweenPoints < minimalDistance)
             {
-                minimalPoint = _poissonDiskSampler._finalPoints[i];
+                minimalPoint = _finalPoints[i];
                 minimalDistance = distanceBetweenPoints;
             }
         }
@@ -167,5 +166,11 @@ public class PoissonInstance
             PointIsWithinSamplingBounds(hitInfo.point))
             return true;
         return false;
+    }
+    private bool PointIsWithinSamplingBounds(Vector3 point)
+    {
+        if (point.x > _xBounds.x || point.x < _xBounds.y || point.z > _zBounds.x || point.z < _zBounds.y)
+            return false;
+        return true;
     }
 }
