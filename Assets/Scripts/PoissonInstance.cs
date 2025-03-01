@@ -10,10 +10,21 @@ public class PoissonInstance
     private const int BATCH_LIMIT = 100;
 
     private PoissonDiskSampler _poissonDiskSampler;
+    private Vector3 _samplingInstanceAreaPosition; //The position of the imaginary sampling area
+    private Vector3 _samplingInstanceAreaBounds; //The extents of the imaginary sampling area
 
-    public PoissonInstance(PoissonDiskSampler poissonDiskSampler)
+    private Vector2 _xBounds;
+    private Vector2 _zBounds;
+
+    public PoissonInstance(PoissonDiskSampler poissonDiskSampler, Vector3 samplingInstanceAreaPosition, Vector3 samplingInstanceAreaBounds)
     {
         _poissonDiskSampler = poissonDiskSampler;
+        _samplingInstanceAreaPosition = samplingInstanceAreaPosition;
+        _samplingInstanceAreaBounds = samplingInstanceAreaBounds;
+        _xBounds = new Vector2(_samplingInstanceAreaPosition.x + _samplingInstanceAreaBounds.x,
+            _samplingInstanceAreaPosition.x - _samplingInstanceAreaBounds.x);
+        _zBounds = new Vector2(_samplingInstanceAreaPosition.z + _samplingInstanceAreaBounds.z, 
+            _samplingInstanceAreaPosition.z - _samplingInstanceAreaBounds.z);
     }
 
     public async void Async_DoSampling()
@@ -73,11 +84,11 @@ public class PoissonInstance
     private Vector3? GetRandomPointOnMesh()
     {
         Vector3 colliderExtentsOffset = new Vector3(
-            Random.Range(0, _poissonDiskSampler.PoissonCollider.bounds.extents.x),
-            _poissonDiskSampler.PoissonCollider.bounds.extents.y,
-            Random.Range(0, _poissonDiskSampler.PoissonCollider.bounds.extents.z));
+            Random.Range(0, _samplingInstanceAreaBounds.x),
+            _samplingInstanceAreaBounds.y,
+            Random.Range(0, _samplingInstanceAreaBounds.z));
         RaycastHit hitInfo = new RaycastHit();
-        if (TryRayCast(_poissonDiskSampler.gameObject.transform.position, colliderExtentsOffset, ref hitInfo))
+        if (TryRayCast(_samplingInstanceAreaPosition, colliderExtentsOffset, ref hitInfo))
             return hitInfo.point;
         return null;
     }
@@ -89,16 +100,21 @@ public class PoissonInstance
         {
             Vector3 neighbourPoint = GetRandomPointOnDisk(point.Value);
             if (!TryRayCast(neighbourPoint, Vector3.zero, ref hitInfo)) continue;
-            if (PointIsAtAppropriateDistance(neighbourPoint) &&
-                _poissonDiskSampler.PoissonCollider.bounds.Contains(neighbourPoint))
+            if (PointIsAtAppropriateDistance(neighbourPoint))
             {
                 neighbourPoint.y = hitInfo.point.y;
                 samplePointReturnedIfValidPoint = neighbourPoint;
                 return true;
             }
         }
-
         return false;
+    }
+
+    private bool PointIsWithinSamplingBounds(Vector3 point)
+    {
+        if (point.x > _xBounds.x || point.x < _xBounds.y || point.z > _zBounds.x || point.z < _zBounds.y)
+            return false;
+        return true;
     }
 
     private Vector3 GetRandomPointOnDisk(Vector3 point)
@@ -140,12 +156,16 @@ public class PoissonInstance
         return false;
     }
 
+    //Does a raycast check and also determines if the point is within bounds
     private bool TryRayCast(Vector3 rayOrigin, Vector3 offset, ref RaycastHit hitInfo)
     {
         Vector3 originWithOffset = rayOrigin + offset;
         originWithOffset.y *= Y_OFFSET_FOR_SAMPLING_RAYCAST;
         originWithOffset.y = Mathf.Abs(originWithOffset.y);
-        return Physics.Raycast(originWithOffset, Vector3.down, out hitInfo, Mathf.Infinity,
-            LayerMask.GetMask(GROUND_LAYER));
+        if (Physics.Raycast(originWithOffset, Vector3.down, out hitInfo, Mathf.Infinity,
+                LayerMask.GetMask(GROUND_LAYER)) &&
+            PointIsWithinSamplingBounds(hitInfo.point))
+            return true;
+        return false;
     }
 }

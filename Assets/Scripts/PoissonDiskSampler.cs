@@ -39,7 +39,7 @@ public class PoissonDiskSampler : MonoBehaviour
     {
         _mainSamplingCancellationTokenSource = new CancellationTokenSource();
         MainSampleCancellationToken = _mainSamplingCancellationTokenSource.Token;
-        PoissonInstance poissonInstance = new PoissonInstance(this);
+        PoissonInstance poissonInstance = new PoissonInstance(this, transform.position, PoissonCollider.bounds.extents);
         poissonInstance.Async_DoSampling();
     }
     
