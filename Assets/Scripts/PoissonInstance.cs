@@ -18,12 +18,16 @@ public class PoissonInstance
 
     private List<Vector3?> _activePoints;
     private List<Vector3> _finalPoints;
+    
+    private CancellationToken _cancellationToken;
 
-    public PoissonInstance(PoissonDiskSampler poissonDiskSampler, Vector3 samplingInstanceAreaCenter, Vector3 samplingInstanceAreaExtents)
+    public PoissonInstance(PoissonDiskSampler poissonDiskSampler, Vector3 samplingInstanceAreaCenter, Vector3 samplingInstanceAreaExtents,
+        CancellationToken cancellationToken)
     {
         _poissonDiskSampler = poissonDiskSampler;
         _samplingInstanceAreaCenter = samplingInstanceAreaCenter;
         _samplingInstanceAreaExtents = samplingInstanceAreaExtents;
+        _cancellationToken = cancellationToken;
         // Debug.DrawRay(_samplingInstanceAreaCenter, Vector3.up, Color.green, 10f);
         // Debug.DrawRay(_samplingInstanceAreaCenter + samplingInstanceAreaExtents, Vector3.up, Color.yellow, 10f);
         _xBounds = new Vector2(_samplingInstanceAreaCenter.x + _samplingInstanceAreaExtents.x,
@@ -60,7 +64,7 @@ public class PoissonInstance
         while (currentIterationForBatch < BATCH_LIMIT)
         {
             Debug.Log(currentIterationForBatch);
-            if (_activePoints.Count == 0 || _poissonDiskSampler.MainSampleCancellationToken.IsCancellationRequested)
+            if (_activePoints.Count == 0 || _cancellationToken.IsCancellationRequested)
                 return;
 
             Vector3? sampledPoint = _activePoints[Random.Range(0, _activePoints.Count)];

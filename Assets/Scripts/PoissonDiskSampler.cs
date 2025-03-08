@@ -9,7 +9,7 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
-
+[ExecuteInEditMode]
 [RequireComponent(typeof(BoxCollider))]
 public class PoissonDiskSampler : MonoBehaviour
 {
@@ -27,10 +27,10 @@ public class PoissonDiskSampler : MonoBehaviour
     private const float Y_OFFSET_FOR_SAMPLING_RAYCAST = 10f;
     private const int BATCH_LIMIT = 100;
 
-
-
     private CancellationTokenSource _mainSamplingCancellationTokenSource;
     public CancellationToken MainSampleCancellationToken;
+    
+    //USE THIS AS A MAIN THREAD DISPATCHER
 
     public void DoAsyncSampling()
     {
@@ -44,7 +44,7 @@ public class PoissonDiskSampler : MonoBehaviour
         _mainSamplingCancellationTokenSource = new CancellationTokenSource();
         MainSampleCancellationToken = _mainSamplingCancellationTokenSource.Token;
         PoissonInstance poissonInstance = new PoissonInstance(this, transform.position, 
-            PoissonCollider.bounds.extents);
+            PoissonCollider.bounds.extents, MainSampleCancellationToken);
         poissonInstance.Async_DoSampling();
     }
 
@@ -53,7 +53,7 @@ public class PoissonDiskSampler : MonoBehaviour
         if (Mathf.Approximately(2 * extentsOfBoundingArea.x,
                 2 * PoissonCollider.bounds.extents.x / Mathf.Pow(2, MaxNumberOfSubdivisions)))
         {
-            PoissonInstance poissonInstance = new PoissonInstance(this, centerOfBoundingArea, extentsOfBoundingArea);
+            PoissonInstance poissonInstance = new PoissonInstance(this, centerOfBoundingArea, extentsOfBoundingArea, MainSampleCancellationToken);
             poissonInstance.Async_DoSampling();
             return;
         }
