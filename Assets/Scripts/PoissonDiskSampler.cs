@@ -60,6 +60,7 @@ public class PoissonDiskSampler : MonoBehaviour
 
     private void CreateBuckets(Vector3 centerOfBoundingArea, Vector3 extentsOfBoundingArea)
     {
+        extentsOfBoundingArea.y = 0f;
         if (Mathf.Approximately(2 * extentsOfBoundingArea.x,
                 2 * PoissonCollider.bounds.extents.x / Mathf.Pow(2, MaxNumberOfSubdivisions)))
         {

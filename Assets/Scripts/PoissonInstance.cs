@@ -36,6 +36,17 @@ public class PoissonInstance
             _samplingInstanceAreaCenter.z - _samplingInstanceAreaExtents.z);
         _activePoints = new List<Vector3?>();
         _finalPoints = new List<Vector3>();
+        DrawBounds();
+    }
+
+    private void DrawBounds()
+    {
+        Vector3 lowerLeftPoint = _samplingInstanceAreaCenter - _samplingInstanceAreaExtents;
+        Vector3 upperRightPoint = _samplingInstanceAreaCenter + _samplingInstanceAreaExtents;
+        Debug.DrawLine(lowerLeftPoint, lowerLeftPoint + new Vector3( _samplingInstanceAreaExtents.x, 0f, 0f), Color.yellow, 10f);
+        Debug.DrawLine(lowerLeftPoint, lowerLeftPoint + new Vector3( 0f, 0f, _samplingInstanceAreaExtents.z), Color.yellow, 10f);
+        Debug.DrawLine(upperRightPoint, upperRightPoint - new Vector3(_samplingInstanceAreaExtents.x, 0f, 0f), Color.yellow, 10f);
+        Debug.DrawLine(upperRightPoint, upperRightPoint - new Vector3( 0f, 0f, _samplingInstanceAreaExtents.z), Color.yellow, 10f);
     }
 
     public async void Async_DoSampling()
@@ -55,7 +66,11 @@ public class PoissonInstance
         {
             await DoSamplingBatch();
             if (_cancellationToken.IsCancellationRequested)
+            {
+                _activePoints.Clear();
+                _finalPoints.Clear();
                 return;
+            }
         }
     }
 
@@ -131,7 +146,7 @@ public class PoissonInstance
         Vector3 minimalPoint = Vector3.zero;
         for (int i = 0; i < _finalPoints.Count; i++)
         {
-            distanceBetweenPoints = Vector3.Distance(_finalPoints[i], neighbourPoint);
+            distanceBetweenPoints = Vector2.Distance(new Vector2(_finalPoints[i].x, _finalPoints[i].z), new Vector2(neighbourPoint.x, neighbourPoint.z));
             if (distanceBetweenPoints < minimalDistance)
             {
                 minimalPoint = _finalPoints[i];
