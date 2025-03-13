@@ -54,6 +54,8 @@ public class PoissonInstance
         while (_activePoints.Count > 0)
         {
             await DoSamplingBatch();
+            if (_cancellationToken.IsCancellationRequested)
+                return;
         }
     }
 
@@ -63,10 +65,9 @@ public class PoissonInstance
 
         while (currentIterationForBatch < BATCH_LIMIT)
         {
-            Debug.Log(currentIterationForBatch);
             if (_activePoints.Count == 0 || _cancellationToken.IsCancellationRequested)
                 return;
-
+            
             Vector3? sampledPoint = _activePoints[Random.Range(0, _activePoints.Count)];
             Vector3 sampleNeighbourPointReturnedIfPointIsValid = Vector3.zero;
             if (PointIsValid(sampledPoint, ref sampleNeighbourPointReturnedIfPointIsValid))
@@ -74,21 +75,13 @@ public class PoissonInstance
                 currentIterationForBatch++;
                 _finalPoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
                 _activePoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
-                InstantiateAtPoint(sampleNeighbourPointReturnedIfPointIsValid);
+                _poissonDiskSampler.SamplingPositions.Enqueue(sampleNeighbourPointReturnedIfPointIsValid);
             }
             else
                 _activePoints.Remove(sampledPoint);
 
             await Task.Delay((int)(_poissonDiskSampler.SpawnSpeed * 1000));
         }
-    }
-
-    private void InstantiateAtPoint(Vector3 point)
-    {
-        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.transform.position = point;
-        cube.transform.localScale /= 10f;
-        _poissonDiskSampler.Samples.Add(cube);
     }
 
     private Vector3? GetRandomPointOnMesh()

@@ -13,6 +13,7 @@ using Vector3 = UnityEngine.Vector3;
 [RequireComponent(typeof(BoxCollider))]
 public class PoissonDiskSampler : MonoBehaviour
 {
+    public GameObject PrefabToSpawn;
     public BoxCollider PoissonCollider;
     public List<GameObject> Samples;
     
@@ -22,18 +23,26 @@ public class PoissonDiskSampler : MonoBehaviour
     [Tooltip("The number of times the bounding area is divided into quadrants to facilitate asynchronous sampling. For example, a value of 1 " +
             "means that the bounding area will be divided into 4 quadrants with each quadrant having it's own sampling process running asynchronously.")]
     [Range(1, 10)]public int MaxNumberOfSubdivisions;
-
-    private const string GROUND_LAYER = "Ground";
-    private const float Y_OFFSET_FOR_SAMPLING_RAYCAST = 10f;
-    private const int BATCH_LIMIT = 100;
+    public Queue<Vector3> SamplingPositions = new Queue<Vector3>();
 
     private CancellationTokenSource _mainSamplingCancellationTokenSource;
     public CancellationToken MainSampleCancellationToken;
     
-    //USE THIS AS A MAIN THREAD DISPATCHER
+    //MAIN THREAD DISPATCHER UPDATE
+    private void Update()
+    {
+        if (SamplingPositions.Count > 0)
+        {
+            Vector3 pointToSpawnAt = SamplingPositions.Dequeue();
+            GameObject prefabToSpawn = Instantiate(PrefabToSpawn);
+            prefabToSpawn.transform.position = pointToSpawnAt;
+            Samples.Add(prefabToSpawn);
+        }
+    }
 
     public void DoAsyncSampling()
     {
+        ClearSampledPoints();
         _mainSamplingCancellationTokenSource = new CancellationTokenSource();
         MainSampleCancellationToken = _mainSamplingCancellationTokenSource.Token;
         CreateBuckets(transform.position, PoissonCollider.bounds.extents);
@@ -41,6 +50,7 @@ public class PoissonDiskSampler : MonoBehaviour
 
     public void DoSimpleSampling()
     {
+        ClearSampledPoints();
         _mainSamplingCancellationTokenSource = new CancellationTokenSource();
         MainSampleCancellationToken = _mainSamplingCancellationTokenSource.Token;
         PoissonInstance poissonInstance = new PoissonInstance(this, transform.position, 
@@ -71,6 +81,7 @@ public class PoissonDiskSampler : MonoBehaviour
     private Vector3 GetHalfExtents(Vector3 currentExtents) => new Vector3(currentExtents.x / 2, currentExtents.y, currentExtents.z / 2);
     public void ClearSampledPoints()
     {
+        SamplingPositions.Clear();
         for (short i = 0; i < Samples.Count; i++)
             DestroyImmediate(Samples[i]);
         Samples.Clear();
@@ -78,6 +89,7 @@ public class PoissonDiskSampler : MonoBehaviour
 
     public void StopSampling()
     {
+        SamplingPositions.Clear();
         _mainSamplingCancellationTokenSource.Cancel();
     }
 }
