@@ -36,7 +36,7 @@ public class PoissonInstance
             _samplingInstanceAreaCenter.z - _samplingInstanceAreaExtents.z);
         _activePoints = new List<Vector3?>();
         _finalPoints = new List<Vector3>();
-        DrawBounds();
+        // DrawBounds();
     }
 
     private void DrawBounds()
@@ -90,13 +90,20 @@ public class PoissonInstance
                 currentIterationForBatch++;
                 _finalPoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
                 _activePoints.Add(sampleNeighbourPointReturnedIfPointIsValid);
-                _poissonDiskSampler.SamplingPositions.Enqueue(sampleNeighbourPointReturnedIfPointIsValid);
+                InstantiateAtPoint(sampleNeighbourPointReturnedIfPointIsValid);
             }
             else
                 _activePoints.Remove(sampledPoint);
 
             await Task.Delay((int)(_poissonDiskSampler.SpawnSpeed * 1000));
         }
+    }
+
+    private void InstantiateAtPoint(Vector3 point)
+    {
+        GameObject prefabToSpawn = GameObject.Instantiate(_poissonDiskSampler.PrefabToSpawn);
+        prefabToSpawn.transform.position = point;
+        _poissonDiskSampler.Samples.Add(prefabToSpawn);
     }
 
     private Vector3? GetRandomPointOnMesh()
