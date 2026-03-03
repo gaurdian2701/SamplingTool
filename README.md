@@ -1,5 +1,5 @@
 # Sampling Tool
-## Multi-Layered Perlin Noise
+## Terrain Generation using Multi-Layered Perlin Noise
 I followed Sebastian Lague's **Procedural Terrain Generation** series on youtube:\
 [Link to the youtube playlist](https://www.youtube.com/watch?v=wbpMiKiSKm8&list=PLFt_AvWsXl0eBW2EiBtl_sxmDtSgZBxB3).
 
